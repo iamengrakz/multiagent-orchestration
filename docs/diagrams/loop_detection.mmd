@@ -1,0 +1,34 @@
+%% docs/diagrams/loop_detection.mmd
+%% Book reference: Chapter 6, §6.2–6.3
+%% Render at: https://mermaid.live
+
+flowchart TD
+    START([Orchestrator: next tool in DAG])
+
+    START --> FINGER["Compute fingerprint\nSHA-256( tool_name + inputs )"]
+
+    FINGER --> CHECK{"fingerprint\nalready seen?"}
+
+    CHECK -->|"No (first occurrence)"| RECORD["Record fingerprint\nincrement count to 1"]
+    RECORD --> EXEC["Execute tool.call( inputs )"]
+    EXEC --> RESULT["Return Ok / Err result\nto orchestrator"]
+    RESULT --> NEXT([Next tool in DAG])
+
+    CHECK -->|"Yes (count > max_repeats)"| LOOP_ERR
+
+    LOOP_ERR["Raise LoopError\n─────────────────\ntool_name: web_search\nfingerprint: a3f9…\noccurrences: 2"]
+
+    LOOP_ERR --> LOG["StructuredLogger.book_pattern()\n🔁  LOOP PREVENTED —\norchestrator terminated\nbefore infinite tool call ✓"]
+
+    LOG --> HALT([Halt pipeline\nOrchestrationResult.halted_at = tool.name])
+
+    style LOOP_ERR fill:#8b0000,color:#fff,stroke:#ff6666
+    style LOG fill:#1a3a1a,color:#fff,stroke:#66cc66
+    style HALT fill:#2d2d2d,color:#fff,stroke:#888
+
+    subgraph FP["InvocationFingerprinter state\n(scoped to current pipeline run)"]
+        STORE[("_seen: dict[fingerprint → count]\n\n'a3f9…' → 1\n'b72c…' → 1\n'ff01…' → 2  ← TRIGGERS LOOP")]
+    end
+
+    RECORD -.->|"update"| STORE
+    CHECK -.->|"query"| STORE

@@ -1,0 +1,101 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "multiagent-orchestration"
+version = "0.1.0"
+description = "Production reference implementation for multi-agent orchestration — companion to the book by Aimal Khan and Shamvail Khan"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.11"
+authors = [
+    { name = "Aimal Khan", email = "aimal@example.com" },
+    { name = "Shamvail Khan", email = "shamvail@example.com" },
+]
+keywords = [
+    "multi-agent",
+    "llm",
+    "orchestration",
+    "mcp",
+    "agentic-ai",
+    "production",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+
+# Runtime dependencies — the core library requires only the stdlib.
+# jsonschema is optional; when absent, the built-in lightweight validator is used.
+# Set MULTIAGENT_USE_JSONSCHEMA=1 and install [jsonschema] extra for full Draft-7 compliance.
+dependencies = [
+    "typing-extensions>=4.9; python_version < '3.12'",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.30"]
+anthropic = ["anthropic>=0.28"]
+redis = ["redis>=5.0"]
+jsonschema = ["jsonschema>=4.21"]
+
+dev = [
+    # testing
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-asyncio>=0.23",
+    # type checking
+    "mypy>=1.10",
+    "types-jsonschema",
+    # linting / formatting
+    "ruff>=0.4",
+    "black>=24.0",
+    # all optional adapters for local dev
+    "openai>=1.30",
+    "anthropic>=0.28",
+    "redis>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/YOUR_USERNAME/multiagent-orchestration"
+Repository = "https://github.com/YOUR_USERNAME/multiagent-orchestration"
+"Bug Tracker" = "https://github.com/YOUR_USERNAME/multiagent-orchestration/issues"
+
+# ---------------------------------------------------------------------------
+# Tool configuration
+# ---------------------------------------------------------------------------
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/multiagent_orchestration"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "--tb=short -q"
+
+[tool.coverage.run]
+source = ["src"]
+omit = ["*/adapters/stub_adapter.py"]
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 80
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.black]
+line-length = 88
+target-version = ["py311", "py312"]

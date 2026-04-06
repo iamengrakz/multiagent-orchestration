@@ -1,0 +1,37 @@
+%% docs/diagrams/circuit_breaker.mmd
+%% Book reference: Chapter 10, §10.2
+%% Render at: https://mermaid.live
+
+stateDiagram-v2
+    [*] --> CLOSED : initial state
+
+    CLOSED --> CLOSED : ✓ call succeeds\nfailure_count = 0
+
+    CLOSED --> CLOSED : ✗ call fails\nfailure_count < threshold
+
+    CLOSED --> OPEN : ✗ call fails\nfailure_count >= threshold\n(failure_threshold = 3)
+
+    OPEN --> OPEN : any call → CircuitOpenError\n(fast-fail, no tool execution)
+
+    OPEN --> HALF_OPEN : recovery_timeout elapsed\n(default: 30 seconds)
+
+    HALF_OPEN --> CLOSED : ✓ trial call succeeds\nfailure_count = 0
+
+    HALF_OPEN --> OPEN : ✗ trial call fails\nback to OPEN
+
+    note right of OPEN
+        During OPEN state:
+        all calls return
+        Err(CircuitOpenError)
+        immediately — the tool's
+        execute() is never called.
+        This prevents cascading
+        failure propagation.
+    end note
+
+    note right of HALF_OPEN
+        Only half_open_max_calls
+        (default: 1) trial call
+        is permitted. All others
+        are rejected like OPEN.
+    end note

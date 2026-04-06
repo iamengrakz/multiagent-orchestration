@@ -1,0 +1,39 @@
+%% docs/diagrams/dag_orchestration.mmd
+%% Book reference: Chapter 4 & 5
+%% Render at: https://mermaid.live
+
+flowchart TD
+    subgraph RESEARCH["Research Agent Pipeline (Chapter 5)"]
+        direction TB
+        A["🧠 PlannerTool\nv1.0.0\nDecomposes query into search terms"]
+        B["🔍 WebSearchTool\nv1.0.0\nFetches ranked result snippets"]
+        C["📝 SummariseTool\nv1.0.0\nSynthesises results"]
+        D["💬 AnswerTool\nv1.0.0\nFormats final response"]
+
+        A -->|"search_terms: list[str]"| B
+        B -->|"results: list[str]"| C
+        C -->|"summary: str"| D
+    end
+
+    subgraph MIDDLEWARE["Middleware Layer"]
+        direction LR
+        FP["🔁 InvocationFingerprinter\n(Chapter 6)"]
+        IM["♻️ IdempotencyMiddleware\n(Chapter 8)"]
+        CB["⚡ CircuitBreaker\n(Chapter 10)"]
+        TB["💰 TokenBudgetManager\n(Chapter 7)"]
+    end
+
+    subgraph ORCH["DAGOrchestrator (Chapter 4)"]
+        direction TB
+        TOPO["1. Topological Sort"]
+        LOOP["2. Loop Detection"]
+        EXEC["3. Tool Execution"]
+        LOG["4. Structured Logging"]
+    end
+
+    RESEARCH --> ORCH
+    ORCH --> MIDDLEWARE
+
+    style RESEARCH fill:#1e3a5f,color:#fff,stroke:#4a9eff
+    style MIDDLEWARE fill:#2d1e3a,color:#fff,stroke:#9b59b6
+    style ORCH fill:#1e3a2d,color:#fff,stroke:#2ecc71

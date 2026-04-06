@@ -1,0 +1,29 @@
+%% docs/diagrams/idempotency_flow.mmd
+%% Book reference: Chapter 8, §8.2
+%% Render at: https://mermaid.live
+
+sequenceDiagram
+    participant ORC as DAGOrchestrator
+    participant MW as IdempotencyMiddleware
+    participant STORE as IdempotencyStore<br/>(InMemoryStore / Redis)
+    participant TOOL as MCPToolContract<br/>(e.g. EmailDispatchTool)
+    participant EXT as External System<br/>(e.g. email server)
+
+    ORC->>MW: call(tool, inputs, key="send-001")
+
+    MW->>STORE: set_if_absent("send-001", "{__pending: true}")
+
+    alt Key did NOT exist (first call)
+        STORE-->>MW: True (key created)
+        MW->>TOOL: tool.call(inputs)
+        TOOL->>EXT: send email
+        EXT-->>TOOL: 200 OK
+        TOOL-->>MW: Ok({"sent": true, "message_id": "msg-1"})
+        MW->>STORE: set_if_absent("send-001:result", '{"sent":true,...}')
+        MW-->>ORC: Ok({"sent": true, "message_id": "msg-1"})
+
+    else Key ALREADY exists (duplicate / retry call)
+        STORE-->>MW: False (key already present)
+        Note over MW,STORE: ♻️  IDEMPOTENT RETRY HANDLED<br/>tool.execute() is NOT called<br/>No duplicate email sent
+        MW-->>ORC: Ok(cached_result)
+    end

@@ -1,0 +1,53 @@
+# Book reference: Chapter 12 — "Deploying Multi-Agent Systems to Production"
+#
+# Local stack: application + Redis (for production-mode idempotency)
+#
+# Usage:
+#   docker-compose up                    # start both services
+#   docker-compose run app python \      # run financial agent
+#     examples/financial_agent/run.py
+#   docker-compose down                  # stop and remove containers
+#   docker-compose down -v               # also remove Redis volume
+
+version: "3.9"
+
+services:
+
+  # ── Application ───────────────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      target: runtime
+    image: multiagent-orchestration:local
+    environment:
+      # LLM adapter selection: stub | openai | anthropic
+      - ORCHESTRATION_LLM_ADAPTER=${ORCHESTRATION_LLM_ADAPTER:-stub}
+      # API keys (leave blank when using the stub adapter)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Redis URL — used by RedisStore (Chapter 8, §8.5)
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      python examples/research_agent/run.py --verbose
+    restart: "no"
+
+  # ── Redis (idempotency store) ─────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
